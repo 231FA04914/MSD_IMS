@@ -1,0 +1,75 @@
+.suppliers-main {
+  padding: 2rem;
+}
+
+.suppliers-main h1 {
+  margin-bottom: 1.5rem;
+  color: #1e3a8a;
+}
+
+/* Form */
+.supplier-form {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.supplier-form input {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.supplier-form button {
+  background: #2a5dba;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.supplier-form button:hover {
+  background: #1d4aa5;
+}
+
+/* Table */
+.suppliers-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.suppliers-table th,
+.suppliers-table td {
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.suppliers-table th {
+  background: #2a5dba;
+  color: white;
+}
+
+.suppliers-table button {
+  margin-right: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.suppliers-table button:first-child {
+  background: #ffc107;
+  color: black;
+}
+
+.suppliers-table button:last-child {
+  background: #dc3545;
+  color: white;
+}
