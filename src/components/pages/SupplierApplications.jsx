@@ -3,22 +3,65 @@ import { useAlert } from "../../contexts/AlertContext.jsx";
 import "../styles/global.css";
 
 const SupplierApplications = () => {
-  const { showAlert } = useAlert();
+  const { addAlert } = useAlert();
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     loadApplications();
+    
+    // Listen for new applications
+    const handleNewApplication = (event) => {
+      console.log('🔔 New application received:', event.detail);
+      loadApplications();
+    };
+    
+    window.addEventListener('supplierApplicationSubmitted', handleNewApplication);
+    
+    return () => {
+      window.removeEventListener('supplierApplicationSubmitted', handleNewApplication);
+    };
   }, []);
 
   const loadApplications = () => {
     const storedApplications = JSON.parse(localStorage.getItem('supplierApplications') || '[]');
+    console.log('📋 Loading supplier applications from localStorage:', storedApplications);
     setApplications(storedApplications);
+  };
+
+  const createTestApplication = () => {
+    const testApp = {
+      id: 'app_test_' + Date.now(),
+      contactPerson: 'Test Supplier',
+      email: 'test@supplier.com',
+      phone: '9876543210',
+      address: '123 Test Street',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      bankAccountNumber: '1234567890',
+      bankName: 'HDFC Bank',
+      drivingLicense: { name: 'test-license.pdf', type: 'application/pdf', size: 1024, data: 'test' },
+      verificationDocuments: [{ id: 1, name: 'test-doc.pdf', type: 'application/pdf', size: 1024, data: 'test' }],
+      status: 'pending',
+      appliedDate: new Date().toISOString(),
+      reviewedDate: null,
+      reviewedBy: null,
+      notes: ''
+    };
+    
+    const existing = JSON.parse(localStorage.getItem('supplierApplications') || '[]');
+    const updated = [...existing, testApp];
+    localStorage.setItem('supplierApplications', JSON.stringify(updated));
+    console.log('✅ Test application created and saved');
+    loadApplications();
+    addAlert({ type: 'success', message: 'Test application created successfully!' });
   };
 
   const handleApprove = (application) => {
     try {
+      console.log('✅ Approving application:', application.id);
+      
       // Update application status
       const updatedApplications = applications.map(app => 
         app.id === application.id 
@@ -26,16 +69,19 @@ const SupplierApplications = () => {
               ...app, 
               status: 'approved', 
               reviewedDate: new Date().toISOString(),
-              reviewedBy: 'Admin' // In a real app, this would be the current user
+              reviewedBy: 'Admin'
             }
           : app
       );
       
       setApplications(updatedApplications);
       localStorage.setItem('supplierApplications', JSON.stringify(updatedApplications));
+      console.log('💾 Application status updated to approved');
 
       // Add to suppliers list
       const existingSuppliers = JSON.parse(localStorage.getItem('suppliers') || '[]');
+      console.log('📦 Existing suppliers:', existingSuppliers.length);
+      
       const newSupplier = {
         id: Date.now(),
         name: application.contactPerson,
@@ -43,8 +89,8 @@ const SupplierApplications = () => {
         email: application.email,
         address: `${application.address}, ${application.city}, ${application.state}`,
         contactPerson: application.contactPerson,
-        bankName: application.bankName,
-        bankAccountNumber: application.bankAccountNumber,
+        bankName: application.bankName || '',
+        bankAccountNumber: application.bankAccountNumber || '',
         addedDate: new Date().toISOString(),
         addedBy: 'Admin',
         status: 'active'
@@ -52,16 +98,20 @@ const SupplierApplications = () => {
 
       const updatedSuppliers = [...existingSuppliers, newSupplier];
       localStorage.setItem('suppliers', JSON.stringify(updatedSuppliers));
+      console.log('✅ Supplier added to suppliers list. Total suppliers:', updatedSuppliers.length);
 
-      showAlert("success", `Supplier application for ${application.contactPerson} has been approved and added to suppliers list!`);
+      addAlert({ type: 'success', message: `Supplier application for ${application.contactPerson} has been approved and added to suppliers list!` });
       setSelectedApplication(null);
     } catch (error) {
-      showAlert("error", "Error approving application. Please try again.");
+      console.error('❌ Error approving application:', error);
+      addAlert({ type: 'error', message: 'Error approving application. Please try again.' });
     }
   };
 
   const handleReject = (application, reason = '') => {
     try {
+      console.log('❌ Rejecting application:', application.id);
+      
       const updatedApplications = applications.map(app => 
         app.id === application.id 
           ? { 
@@ -76,11 +126,13 @@ const SupplierApplications = () => {
       
       setApplications(updatedApplications);
       localStorage.setItem('supplierApplications', JSON.stringify(updatedApplications));
+      console.log('💾 Application status updated to rejected');
 
-      showAlert("warning", `Supplier application for ${application.contactPerson} has been rejected.`);
+      addAlert({ type: 'warning', message: `Supplier application for ${application.contactPerson} has been rejected.` });
       setSelectedApplication(null);
     } catch (error) {
-      showAlert("error", "Error rejecting application. Please try again.");
+      console.error('❌ Error rejecting application:', error);
+      addAlert({ type: 'error', message: 'Error rejecting application. Please try again.' });
     }
   };
 
@@ -110,8 +162,47 @@ const SupplierApplications = () => {
   return (
     <div className="page-container">
       <div className="page-header">
-        <h1>📋 Supplier Applications</h1>
-        <p>Review and manage supplier applications</p>
+        <div>
+          <h1>📋 Supplier Applications</h1>
+          <p>Review and manage supplier applications</p>
+        </div>
+        <button 
+          onClick={loadApplications}
+          className="btn btn-primary"
+          style={{ marginLeft: 'auto' }}
+        >
+          🔄 Refresh Applications
+        </button>
+      </div>
+
+      {/* Debug Info */}
+      <div style={{ 
+        background: '#f0f9ff', 
+        border: '1px solid #0ea5e9', 
+        padding: '1rem', 
+        borderRadius: '8px',
+        marginBottom: '1rem'
+      }}>
+        <strong>Debug Info:</strong> Total applications loaded: {applications.length}
+        <br />
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+          <button 
+            onClick={() => {
+              console.log('All applications:', applications);
+              console.log('localStorage data:', localStorage.getItem('supplierApplications'));
+              alert(`Total applications: ${applications.length}\nCheck console for details`);
+            }}
+            style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}
+          >
+            🐛 Show Debug Info
+          </button>
+          <button 
+            onClick={createTestApplication}
+            style={{ padding: '0.5rem 1rem', cursor: 'pointer', background: '#10b981', color: 'white', border: 'none', borderRadius: '4px' }}
+          >
+            ➕ Create Test Application
+          </button>
+        </div>
       </div>
 
       {/* Filter Controls */}

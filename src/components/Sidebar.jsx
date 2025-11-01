@@ -131,6 +131,14 @@ const Sidebar = () => {
         {user?.role === 'customer' && (
           <>
             <Link 
+              to="/customer-products" 
+              className={`sidebar-link ${isActive('/customer-products') ? 'active' : ''}`}
+            >
+              <span className="sidebar-icon">🛍️</span>
+              <span className="sidebar-text">Browse Products</span>
+            </Link>
+            
+            <Link 
               to="/cart" 
               className={`sidebar-link ${isActive('/cart') ? 'active' : ''}`}
             >

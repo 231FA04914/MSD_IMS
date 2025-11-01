@@ -5,7 +5,7 @@ import "../styles/global.css";
 
 const SupplierApplication = () => {
   const navigate = useNavigate();
-  const { showAlert } = useAlert();
+  const { addAlert } = useAlert();
   
   const [formData, setFormData] = useState({
     contactPerson: "",
@@ -23,7 +23,6 @@ const SupplierApplication = () => {
   const [errors, setErrors] = useState({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const alert = useAlert(); // Moved useAlert to the component level
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,7 +47,7 @@ const SupplierApplication = () => {
       if (file) {
         // Check file size (max 5MB)
         if (file.size > 5 * 1024 * 1024) {
-          alert.showAlert("error", `File ${file.name} is too large. Maximum size is 5MB`);
+          addAlert({ type: 'error', message: `File ${file.name} is too large. Maximum size is 5MB` });
           return;
         }
         
@@ -72,7 +71,7 @@ const SupplierApplication = () => {
       
       // Check if total files exceed limit
       if (fileArray.length > 5) {
-        alert.showAlert("error", "Maximum 5 documents allowed");
+        addAlert({ type: 'error', message: "Maximum 5 documents allowed" });
         return;
       }
       
@@ -83,8 +82,7 @@ const SupplierApplication = () => {
       fileArray.forEach((file, index) => {
         // Check file size (max 5MB per file)
         if (file.size > 5 * 1024 * 1024) {
-          const alert = useAlert();
-          alert.showAlert("error", `File ${file.name} is too large. Maximum size is 5MB`);
+          addAlert({ type: 'error', message: `File ${file.name} is too large. Maximum size is 5MB` });
           return;
         }
         
@@ -183,51 +181,50 @@ const SupplierApplication = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted');
+    console.log('🚀 Form submitted');
     
     if (isSubmitting) {
-      console.log('Already submitting, please wait...');
+      console.log('⏳ Already submitting, please wait...');
       return;
     }
     
     // First validate the form
-    console.log('Validating form...');
+    console.log('🔍 Validating form...');
     const isValid = validateForm();
-    console.log('Form validation result:', isValid);
+    console.log('✅ Form validation result:', isValid);
     
     // Check for required files
-    console.log('Checking for required files...');
     if (!formData.drivingLicense) {
-      console.log('No driving license uploaded');
-      alert.showAlert("error", "Please upload your driving license");
+      console.log('❌ Driving license missing');
+      addAlert({ type: 'error', message: "Please upload your driving license" });
       return;
     }
     
     if (formData.verificationDocuments.length === 0) {
-      console.log('No verification documents uploaded');
-      alert.showAlert("error", "Please upload at least one verification document");
+      console.log('❌ Verification documents missing');
+      addAlert({ type: 'error', message: "Please upload at least one verification document" });
       return;
     }
     
-    console.log('All required files are present');
-    
     if (!isValid) {
+      console.log('❌ Form validation failed');
       // Get fresh errors from state after validation
       const errorMessages = Object.values(errors).filter(Boolean);
       if (errorMessages.length > 0) {
-        alert.showAlert("error", `Please fix the following: ${errorMessages.join(', ')}`);
+        addAlert({ type: 'error', message: `Please fix the following: ${errorMessages.join(', ')}` });
       } else {
-        alert.showAlert("error", "Please fill in all required fields correctly");
+        addAlert({ type: 'error', message: "Please fill in all required fields correctly" });
       }
       return;
     }
 
     try {
-      console.log('Starting form submission...');
+      console.log('✨ Starting form submission...');
       setIsSubmitting(true);
       
       // Get existing applications from localStorage
       const existingApplications = JSON.parse(localStorage.getItem('supplierApplications') || '[]');
+      console.log('📦 Existing applications:', existingApplications.length);
       
       // Create new application with timestamp and status
       const newApplication = {
@@ -238,8 +235,8 @@ const SupplierApplication = () => {
         address: formData.address,
         city: formData.city,
         state: formData.state,
-        bankAccountNumber: formData.bankAccountNumber,
-        bankName: formData.bankName,
+        bankAccountNumber: formData.bankAccountNumber || '',
+        bankName: formData.bankName || '',
         drivingLicense: formData.drivingLicense,
         verificationDocuments: formData.verificationDocuments,
         status: 'pending',
@@ -249,18 +246,25 @@ const SupplierApplication = () => {
         notes: ''
       };
       
-      console.log('Submitting application:', newApplication);
+      console.log('📝 New application created:', newApplication);
 
       // Add to applications list
       const updatedApplications = [...existingApplications, newApplication];
       localStorage.setItem('supplierApplications', JSON.stringify(updatedApplications));
       
-      console.log('Application saved to localStorage:', updatedApplications);
+      console.log('💾 Application saved to localStorage. Total applications:', updatedApplications.length);
+      console.log('✅ Verify saved data:', JSON.parse(localStorage.getItem('supplierApplications')));
 
       // Show success modal and reset form
-      console.log('Showing success modal and resetting form...');
+      console.log('🎉 Setting showSuccessModal to true');
       setShowSuccessModal(true);
-      console.log('showSuccessModal state set to:', true);
+      console.log('🎉 Modal state updated. showSuccessModal should be TRUE');
+      
+      // Dispatch custom event for other components
+      window.dispatchEvent(new CustomEvent('supplierApplicationSubmitted', {
+        detail: { application: newApplication }
+      }));
+      console.log('📢 Event dispatched: supplierApplicationSubmitted');
       
       setFormData({
         contactPerson: "",
@@ -275,8 +279,6 @@ const SupplierApplication = () => {
         verificationDocuments: []
       });
       
-      console.log('Form data reset');
-      
       // Auto-close modal and redirect after 5 seconds
       const timer = setTimeout(() => {
         setShowSuccessModal(false);
@@ -288,50 +290,31 @@ const SupplierApplication = () => {
 
     } catch (error) {
       console.error("Error submitting application:", error);
-      alert.showAlert("error", `There was an error: ${error.message || 'Please try again.'}`);
+      addAlert({ type: 'error', message: `There was an error: ${error.message || 'Please try again.'}` });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Log when the SuccessModal component renders
-  console.log('SuccessModal rendered, showSuccessModal:', showSuccessModal);
-  
-  // Success Modal Component
-  const SuccessModal = ({ onClose }) => (
-    <div className="success-modal-overlay">
-      <div className="success-modal">
-        <div className="success-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-          </svg>
-        </div>
-        <h2>Application Submitted Successfully!</h2>
-        <p>Thank you for your interest in becoming a supplier. We'll review your application and get back to you soon.</p>
-        <div className="success-actions">
-          <button onClick={onClose} className="btn btn-primary">
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  console.log('Rendering SupplierApplication, showSuccessModal:', showSuccessModal);
   
   return (
     <div className="supplier-application-container">
+      {/* Debug indicator */}
       {showSuccessModal && (
-        <div style={{ position: 'fixed', top: '20px', left: '20px', background: 'red', color: 'white', padding: '10px', zIndex: 2000 }}>
-          DEBUG: Modal should be visible
+        <div style={{
+          position: 'fixed',
+          top: '10px',
+          right: '10px',
+          background: 'red',
+          color: 'white',
+          padding: '10px',
+          zIndex: 99999,
+          borderRadius: '5px',
+          fontWeight: 'bold'
+        }}>
+          🔴 MODAL STATE: TRUE
         </div>
       )}
-      {showSuccessModal && <SuccessModal onClose={() => {
-        console.log('Closing modal...');
-        setShowSuccessModal(false);
-        navigate("/");
-      }} />}
       
       <div className="application-header">
         <h1>🏢 Supplier Application Form</h1>
@@ -680,8 +663,29 @@ const SupplierApplication = () => {
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className="modal-overlay">
-          <div className="success-modal">
+        <div className="modal-overlay" style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div className="success-modal" style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '3rem 2rem',
+            maxWidth: '500px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+            position: 'relative',
+            zIndex: 10000
+          }}>
             <div className="success-icon">
               <div className="checkmark">
                 <div className="checkmark-circle"></div>

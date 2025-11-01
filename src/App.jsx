@@ -33,6 +33,7 @@ import SupplierApplications from "./components/pages/SupplierApplications.jsx";
 import MyOrders from "./components/pages/MyOrders.jsx";
 import Cart from "./components/pages/Cart.jsx";
 import CustomerProfile from "./components/pages/CustomerProfile.jsx";
+import CustomerProducts from "./components/pages/CustomerProducts.jsx";
 import CommunicationLogs from "./components/pages/CommunicationLogs.jsx";
 import About from "./components/pages/About.jsx";
 import Contact from "./components/pages/Contact.jsx";
@@ -157,6 +158,11 @@ function App() {
       {/* Customer routes */}
       <Route path="/customer-dashboard" element={
         <Navigate to="/customer-products" replace />
+      } />
+      <Route path="/customer-products" element={
+        <ProtectedRoute permission="products_view">
+          <CustomerProducts />
+        </ProtectedRoute>
       } />
       <Route path="/my-orders" element={
         <ProtectedRoute permission="orders_customer">
